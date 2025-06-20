@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switch Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .switch-container {
+            margin: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .switch-container button {
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .switch-container button.on {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .switch-container button.off {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Control the Switches</h1>
+
+<div id="switch1" class="switch-container">
+    <span>Switch 1:</span>
+    <button class="off" onclick="toggleSwitch('switch1')">OFF</button>
+</div>
+<div id="switch2" class="switch-container">
+    <span>Switch 2:</span>
+    <button class="off" onclick="toggleSwitch('switch2')">OFF</button>
+</div>
+<div id="switch3" class="switch-container">
+    <span>Switch 3:</span>
+    <button class="off" onclick="toggleSwitch('switch3')">OFF</button>
+</div>
+
+<script>
+    // Define the ESP32 IP address here
+    const ESP32_IP = "http://167.71.237.12:8000";  // Update with your ESP32 IP address
+
+    // Function to toggle switch state
+    function toggleSwitch(switchId) {
+        const currentButton = document.querySelector(`#${switchId} button`);
+        const newState = currentButton.classList.contains('off') ? 'on' : 'off';
+
+        // Send POST request to change the state of the switch
+        fetch(`${ESP32_IP}/set-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `switch_id=${switchId}&state=${newState}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update the button state
+                currentButton.classList.toggle('off');
+                currentButton.classList.toggle('on');
+                currentButton.textContent = newState.toUpperCase();
+            } else {
+                alert('Error toggling the switch');
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+        });
+    }
+
+    // Fetch the current status of switches on page load
+    window.onload = function() {
+        fetch(`${ESP32_IP}/get-status`)
+            .then(response => response.json())
+            .then(data => {
+                updateSwitchStatus('switch1', data.switch1);
+                updateSwitchStatus('switch2', data.switch2);
+                updateSwitchStatus('switch3', data.switch3);
+            })
+            .catch(err => {
+                console.error('Error:', err);
+            });
+    };
+
+    // Update switch button state based on the current status
+    function updateSwitchStatus(switchId, state) {
+        const switchButton = document.querySelector(`#${switchId} button`);
+        if (state === 'on') {
+            switchButton.classList.remove('off');
+            switchButton.classList.add('on');
+            switchButton.textContent = 'ON';
+        } else {
+            switchButton.classList.remove('on');
+            switchButton.classList.add('off');
+            switchButton.textContent = 'OFF';
+        }
+    }
+</script>
+
+</body>
+</html>
